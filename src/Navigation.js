@@ -2,22 +2,45 @@ import moon from './photos/moon.png';
 import brightness from './photos/brightness.png';
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { auth } from './firebase';
 
 function Navigation() {
-  const [isDark, setDark] = useState(false);
+  const [isDark, setDark] = useState(() => {
+  // Load saved theme or default to false
+  const saved = localStorage.getItem('theme');
+  return saved === 'dark';
+});
   const [isMenuOpen, setMenuOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  const isAuthenticated = !!localStorage.getItem('token');
+  const [isAuthenticated, setIsAuthenticated] = useState(!!(auth && auth.currentUser));
 
   useEffect(() => {
-    const html = document.documentElement;
-    isDark ? html.classList.add('dark') : html.classList.remove('dark');
-  }, [isDark]);
+  const html = document.documentElement;
+  if (isDark) {
+    html.classList.add('dark');
+    localStorage.setItem('theme', 'dark');
+  } else {
+    html.classList.remove('dark');
+    localStorage.setItem('theme', 'light');
+  }
+}, [isDark]);
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
+  useEffect(() => {
+    if (!auth) return; // Firebase not configured yet
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setIsAuthenticated(!!user);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const handleLogout = async () => {
+    if (auth) {
+      await signOut(auth);
+    }
     localStorage.removeItem('username');
+    localStorage.removeItem('userId');
     navigate('/login');
   };
 

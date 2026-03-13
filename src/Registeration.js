@@ -1,9 +1,10 @@
-import { useState } from "react";
+// import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as Yup from "yup";
-import axios from "axios";
+import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { auth } from './firebase';
 
 const validationSchema = Yup.object({
   username: Yup.string().required("Username is required"),
@@ -19,10 +20,19 @@ function Registeration() {
 
   const onSubmit = async (data) => {
     try {
-      await axios.post("http://localhost:5000/api/auth/register", data);
+      if (!auth) {
+        alert("Firebase not initialized. Check .env.local and restart the dev server.");
+        return;
+      }
+      const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
+      await updateProfile(userCredential.user, { displayName: data.username });
+      localStorage.setItem("username", data.username);
+      localStorage.setItem("userId", userCredential.user.uid);
+      alert("Registration successful! Please login.");
       navigate("/login");
     } catch (error) {
-      alert("Registration failed: " + (error.response?.data?.error || error.message));
+      const msg = error?.code ? `${error.code}: ${error.message}` : error.message;
+      alert("Registration failed: " + msg);
     }
   };
 

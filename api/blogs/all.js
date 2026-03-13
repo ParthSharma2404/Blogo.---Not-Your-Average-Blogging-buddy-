@@ -1,6 +1,28 @@
-import connectToDatabase from '../_connector.js'; // Path to shared connector
+const mongoose = require('mongoose');
 
-const mongoose = await import('mongoose');
+// MongoDB connection
+let cachedDb = null;
+async function connectDB() {
+  if (cachedDb) return cachedDb;
+  try {
+    cachedDb = await mongoose.connect(process.env.MONGODB_URI, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+      serverSelectionTimeoutMS: 5000,
+    });
+    return cachedDb;
+  } catch (error) {
+    throw new Error('Database connection failed');
+  }
+}
+
+// Schemas
+const userSchema = new mongoose.Schema({
+  email: { type: String, required: true, unique: true },
+  username: { type: String, required: true, unique: true },
+  password: { type: String, required: true },
+});
+const User = mongoose.models.User || mongoose.model('User', userSchema);
 
 const blogSchema = new mongoose.Schema({
   title: { type: String, required: true },
@@ -11,15 +33,26 @@ const blogSchema = new mongoose.Schema({
 const Blog = mongoose.models.Blog || mongoose.model('Blog', blogSchema);
 
 export default async function handler(req, res) {
+  // Enable CORS
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+  if (req.method === 'OPTIONS') {
+    res.status(200).end();
+    return;
+  }
+
+  if (req.method !== 'GET') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
   try {
-    await connectToDatabase(); // Use cached connection
-    const blogs = await Blog.find().populate('author', 'username');
-    if (!blogs || blogs.length === 0) {
-      return res.status(404).json({ error: 'No blogs found' });
-    }
-    res.status(200).json(blogs);
+    await connectDB();
+    const blogs = await Blog.find().populate('author', 'username').sort({ timestamp: -1 });
+    res.json(blogs);
   } catch (err) {
-    console.error('Error in /api/blogs/all:', err.message); // Log for Vercel Functions Logs
-    res.status(500).json({ error: 'Failed to fetch blogs', details: err.message });
+    console.error('Blogs fetch error:', err);
+    res.status(500).json({ error: err.message });
   }
 }

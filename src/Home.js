@@ -4,19 +4,33 @@ import Getstarted from './home/Getstarted.js';
 import Topic from './home/Topic.js';
 import Featuredblogs from './home/Featuredblogs.js';
 import { Link } from 'react-router-dom';
+import { auth } from './firebase';
+import { onAuthStateChanged } from 'firebase/auth';
+import React, { useState, useEffect } from 'react';
 
 function Home() {
-  const isAuthenticated = !!localStorage.getItem('token');
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setIsAuthenticated(!!user);
+    });
+    return () => unsubscribe();
+  }, []);
+
+
 
   return (
     <div>
       {/* Hero Section */}
-      <div className="mb-20 md:h-screen md:mb-0 flex flex-col justify-center">
-        <div className="mt-20 flex flex-col items-center md:flex-row md:justify-around md:items-center px-4">
+      <div className="h-screen flex flex-col justify-center items-center">
+        <div className="flex flex-col items-center md:flex-row md:justify-around md:items-center w-full px-4 mb-10">
+
           <Greeting />
           <Message />
         </div>
         <div className="text-center mt-10">
+
           {isAuthenticated ? (
             <div>
               <Link to="/dashboard">

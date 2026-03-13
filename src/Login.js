@@ -1,11 +1,10 @@
-import { useState } from "react";
+// import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as Yup from "yup";
-import axios from "axios";
-
-const API_BASE = process.env.REACT_APP_API_URL || "/api";
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { auth } from './firebase';
 
 const validationSchema = Yup.object({
   email: Yup.string().email("Invalid email").required("Email is required"),
@@ -20,15 +19,20 @@ function Login() {
 
   const onSubmit = async (data) => {
     try {
-      const response = await axios.post(`${API_BASE}/auth/login`, {
-        email: data.email,
-        password: data.password,
-      });
-      localStorage.setItem("token", response.data.token);
-      localStorage.setItem("username", response.data.user.username);
+      if (!auth) {
+        alert("Firebase not initialized. Check .env.local and restart the dev server.");
+        return;
+      }
+      const userCredential = await signInWithEmailAndPassword(auth, data.email, data.password);
+      const user = userCredential.user;
+      const token = await user.getIdToken();
+      localStorage.setItem("token", token);
+      localStorage.setItem("username", user.displayName || user.email);
+      localStorage.setItem("userId", user.uid);
       navigate("/dashboard");
     } catch (error) {
-      alert("Login failed: " + (error.response?.data?.error || error.message));
+      const msg = error?.code ? `${error.code}: ${error.message}` : error.message;
+      alert("Login failed: " + msg);
     }
   };
 

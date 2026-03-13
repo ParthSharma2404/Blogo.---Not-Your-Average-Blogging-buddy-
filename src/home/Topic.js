@@ -11,7 +11,7 @@ function Topic() {
                     Whether you're here to learn, reflect, or get inspired — there's something for everyone.
                 </h2>
 
-                <ul className="text-xl grid grid-cols-2 md:grid-cols-3 gap-6 text-2xl font-semibold">
+                <ul className="text-xl grid grid-cols-2 md:grid-cols-3 gap-6 md:text-2xl font-semibold">
                     {topics.map((element, index) => (
                         <li
                             key={index}
