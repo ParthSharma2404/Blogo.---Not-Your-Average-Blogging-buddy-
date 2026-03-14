@@ -4,7 +4,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 import axios from "axios";
 
 
-const API_URL = process.env.REACT_APP_API_URL || "http://localhost:3001/api";
+const API_URL = process.env.REACT_APP_API_URL || "/api";
 
 function Dashboard() {
   const [title, setTitle] = useState("");
