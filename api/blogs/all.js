@@ -5,6 +5,9 @@ let cachedDb = null;
 async function connectDB() {
   if (cachedDb) return cachedDb;
   try {
+    if (!process.env.MONGODB_URI) {
+        throw new Error('MONGODB_URI is not defined');
+    }
     cachedDb = await mongoose.connect(process.env.MONGODB_URI, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
@@ -12,15 +15,17 @@ async function connectDB() {
     });
     return cachedDb;
   } catch (error) {
+    console.error('Database connection error:', error);
     throw new Error('Database connection failed');
   }
 }
 
-// Schemas
+// Schemas - Consistent with api/blogs/index.js
 const userSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
   username: { type: String, required: true, unique: true },
-  password: { type: String, required: true },
+  password: { type: String },
+  firebaseUid: { type: String, unique: true },
 });
 const User = mongoose.models.User || mongoose.model('User', userSchema);
 
