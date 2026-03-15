@@ -72,7 +72,8 @@ const allowedOrigins = [
   'http://localhost:3000',
   'http://localhost:3002',
   'http://127.0.0.1:3000',
-  process.env.FRONTEND_URL
+  process.env.FRONTEND_URL,
+  process.env.FRONTEND_URL?.endsWith('/') ? process.env.FRONTEND_URL.slice(0, -1) : null
 ].filter(Boolean);
 
 app.use(cors({
